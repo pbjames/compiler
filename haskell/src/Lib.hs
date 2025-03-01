@@ -2,11 +2,11 @@ module Lib (
   Statement (..),
   Expr (..),
   BinaryOperator (..),
+  interp,
   maxArgs,
 ) where
 
 import Data.Foldable (find)
-import Data.List (union)
 
 type Identifier = String
 type Var = (Identifier, Int)
@@ -26,19 +26,22 @@ nameInVar name (vname, _) = name == vname
 
 maxArgs :: Statement -> Int
 maxArgs (Compound s t) = max (maxArgs s) (maxArgs t)
+maxArgs (Assign _ (Eseq s _)) = maxArgs s
 maxArgs (Assign _ _) = 0
-maxArgs (Print exprs) = max (length exprs) $ maximum $ maxArgs . intoSeq <$> exprs
+maxArgs (Print exprs)
+  | null exprs = 0
+  | otherwise = max (length exprs) $ maximum $ maxArgs . intoSeq <$> exprs
  where
   intoSeq :: Expr -> Statement
   intoSeq (Eseq s _) = s
   intoSeq _ = Print []
 
-interp :: Statement -> Int
-interp = undefined
+interp :: Statement -> [Var]
+interp = interpLine []
 
 interpLine :: [Var] -> Statement -> [Var]
-interpLine vs (Compound s t) = interpLine vs s `union` interpLine vs t
-interpLine vs (Print _) = vs -- TODO: Finish
+interpLine vs (Compound s t) = interpLine (interpLine vs s) t
+interpLine vs (Print _) = vs -- TODO: Finish using side effects
 interpLine vs (Assign name expr) = update vs (name, interpEval vs expr)
  where
   update :: [Var] -> Var -> [Var]
