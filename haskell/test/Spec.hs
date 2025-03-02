@@ -1,4 +1,4 @@
-import Lib (BinaryOperator (..), Expr (..), Statement (..), interp, maxArgs)
+import Exercises.SLI (BinaryOperator (..), Expr (..), Statement (..), interp, maxArgs)
 import Test.HUnit (Test (..), assertEqual, runTestTTAndExit)
 
 main :: IO ()

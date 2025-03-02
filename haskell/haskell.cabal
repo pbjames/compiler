@@ -25,6 +25,9 @@ source-repository head
 
 library
   exposed-modules:
+      Exercises.SLI
+      Exercises.Tree
+      Lexer
       Lib
   other-modules:
       Paths_haskell
