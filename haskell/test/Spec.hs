@@ -1,4 +1,5 @@
 import Exercises.SLI (BinaryOperator (..), Expr (..), Statement (..), interp, maxArgs)
+import Machines (Regex)
 import Test.HUnit (Test (..), assertEqual, runTestTTAndExit)
 
 main :: IO ()
@@ -18,6 +19,9 @@ exampleSingleLine =
         )
         (Print [Id "b"])
     )
+
+exampleRegex :: Regex
+exampleRegex = And (Or 'a' 'b') (Star 'c')
 
 tests :: Test
 tests =
