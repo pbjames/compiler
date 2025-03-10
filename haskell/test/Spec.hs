@@ -1,6 +1,8 @@
 import Exercises.SLI (BinaryOperator (..), Expr (..), Statement (..), interp, maxArgs)
-import Machines (Regex)
+import Machines (Regex (..), State (..), StateType (..), singleton, stmRange)
 import Test.HUnit (Test (..), assertEqual, runTestTTAndExit)
+
+import Data.Char (ord)
 
 main :: IO ()
 main = runTestTTAndExit tests
@@ -20,8 +22,16 @@ exampleSingleLine =
         (Print [Id "b"])
     )
 
-exampleRegex :: Regex
-exampleRegex = And (Or 'a' 'b') (Star 'c')
+exampleRegex :: Regex Char
+exampleRegex = And (Or (Value 'a') (Value 'b')) (Star (Value 'c'))
+
+generateState :: Char -> State
+generateState c = State Initial [if x == charCode then 1 else -1 | x <- stmRange]
+ where
+  charCode = ord c - 65
+
+acceptingState :: State
+acceptingState = State Accept [-1 | x <- stmRange]
 
 tests :: Test
 tests =
@@ -34,7 +44,20 @@ tests =
     , TestCase $
         assertEqual
           "interp"
-          -- INFO: Order matters apparently
           [("b", 80), ("a", 8)]
           (interp exampleSingleLine)
+    , TestCase $
+        assertEqual
+          "singleton-statemachine-1"
+          [ generateState 'A'
+          , acceptingState
+          ]
+          (singleton 'A')
+    , TestCase $
+        assertEqual
+          "singleton-statemachine-2"
+          [ generateState 'Z'
+          , acceptingState
+          ]
+          (singleton 'Z')
     ]
