@@ -25,6 +25,9 @@ exampleSingleLine =
 exampleRegexA :: Regex Char
 exampleRegexA = Value 'A'
 
+exampleStarRegexC :: Regex Char
+exampleStarRegexC = Star $ Value 'c'
+
 exampleRegexB :: Regex Char
 exampleRegexB = Value 'B'
 
@@ -32,10 +35,15 @@ exampleRegex1 :: Regex Char
 exampleRegex1 = And exampleRegexA exampleRegexB
 
 exampleRegex2 :: Regex Char
-exampleRegex2 = And (Or exampleRegexA exampleRegexB) (Star (Value 'c'))
+exampleRegex2 = And (Or exampleRegexA exampleRegexB) exampleStarRegexC
 
 generateState :: Char -> State
 generateState c = State Initial [if x == charCode then 1 else -1 | x <- stmRange]
+ where
+  charCode = ord c - 65
+
+generateStateWith :: Char -> StateType -> State
+generateStateWith c st = State st [if x == charCode then 1 else -1 | x <- stmRange]
  where
   charCode = ord c - 65
 
@@ -92,4 +100,12 @@ tests =
           , acceptingState
           ]
           (nfa $ char2STM exampleRegex1)
+    , TestCase $
+        assertEqual
+          "nfa-star-1"
+          [ E InitialAccepting [1]
+          , generateState 'C'
+          , E Accept [1]
+          ]
+          (nfa $ char2STM exampleStarRegexC)
     ]
