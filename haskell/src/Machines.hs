@@ -4,9 +4,8 @@ module Machines (
 ) where
 
 import Data.Char (ord)
-import Data.Map (Map)
 
-data StateType = Accept | Start | Normal
+data StateType = Accept | Start | Normal deriving (Eq)
 data Regex c = Star (Regex c) | Or (Regex c) (Regex c) | And (Regex c) (Regex c) | Empty | Value c
 type State = (StateType, [Int])
 type StateMachine = [State]
@@ -18,7 +17,9 @@ singleton c =
   ]
  where
   startState = (Start, [if x == ord c then 1 else -1 | x <- [0 .. 25]])
-  endState = (Accept, [-1 | x <- [0 .. 25]])
+  endState = (Accept, [-1 | x <- [0 .. 26]])
+
+-- all letters + epsilon
 
 almoSTM :: Regex Char -> Regex StateMachine
 almoSTM (Star r) = almoSTM r
@@ -32,9 +33,17 @@ nfa :: Regex StateMachine -> StateMachine
 nfa (Value s) = s
 nfa (Or s t) = nfa s ++ nfa t
 nfa (And s t) = nfa s `connect` nfa t
- where
-  connect :: StateMachine -> StateMachine -> StateMachine
-  connect s t = update s t ++ t
 
-  update :: StateMachine -> StateMachine -> StateMachine
-  update = undefined
+connect :: StateMachine -> StateMachine -> StateMachine
+connect a b = update a b ++ b
+
+update :: StateMachine -> StateMachine -> StateMachine
+update s t = map (linkStateToMachine t) (initialStates s)
+
+initialStates :: StateMachine -> StateMachine
+initialStates = filter ((== Start) . fst)
+
+-- link state
+linkStateToMachine :: StateMachine -> State -> State
+linkStateToMachine t (Accept, vals) = undefined
+linkStateToMachine t s@(Start, vals) = s
