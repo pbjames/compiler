@@ -66,6 +66,6 @@ starify s = newInitial $ map (linkAcceptingToIdxs (initialStates s) Accept) s
   removeInitial t = t
 
 juxtapose :: StateMachine -> StateMachine -> StateMachine
-juxtapose s t = map (linkAcceptingToIdxs correctInitStates Normal) s
+juxtapose s t = map (linkAcceptingToIdxs correctInitStates Normal) s ++ t
  where
-  correctInitStates = map (+ (length s - 1)) $ initialStates t
+  correctInitStates = map (+ length s) $ initialStates t

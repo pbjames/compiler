@@ -1,5 +1,5 @@
 import Exercises.SLI (BinaryOperator (..), Expr (..), Statement (..), interp, maxArgs)
-import Machines (Regex (..), State (..), StateType (..), singleton, stmRange)
+import Machines (Regex (..), State (..), StateType (..), char2STM, nfa, singleton, stmRange)
 import Test.HUnit (Test (..), assertEqual, runTestTTAndExit)
 
 import Data.Char (ord)
@@ -22,8 +22,17 @@ exampleSingleLine =
         (Print [Id "b"])
     )
 
-exampleRegex :: Regex Char
-exampleRegex = And (Or (Value 'a') (Value 'b')) (Star (Value 'c'))
+exampleRegexA :: Regex Char
+exampleRegexA = Value 'A'
+
+exampleRegexB :: Regex Char
+exampleRegexB = Value 'B'
+
+exampleRegex1 :: Regex Char
+exampleRegex1 = And exampleRegexA exampleRegexB
+
+exampleRegex2 :: Regex Char
+exampleRegex2 = And (Or exampleRegexA exampleRegexB) (Star (Value 'c'))
 
 generateState :: Char -> State
 generateState c = State Initial [if x == charCode then 1 else -1 | x <- stmRange]
@@ -60,4 +69,27 @@ tests =
           , acceptingState
           ]
           (singleton 'Z')
+    , TestCase $
+        assertEqual
+          "nfa-basic-1"
+          [ generateState 'A'
+          , acceptingState
+          ]
+          (nfa $ char2STM exampleRegexA)
+    , TestCase $
+        assertEqual
+          "nfa-basic-2"
+          [ generateState 'B'
+          , acceptingState
+          ]
+          (nfa $ char2STM exampleRegexB)
+    , TestCase $
+        assertEqual
+          "nfa-1"
+          [ generateState 'A'
+          , E Normal [2]
+          , generateState 'B'
+          , acceptingState
+          ]
+          (nfa $ char2STM exampleRegex1)
     ]
