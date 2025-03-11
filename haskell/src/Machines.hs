@@ -24,7 +24,7 @@ data State
   | E {stype :: StateType, targets :: [Int]}
   deriving (Eq, Show)
 type StateMachine = [State]
-type SMOp = StateMachine -> StateMachine -> StateMachine
+type STMOp = StateMachine -> StateMachine -> StateMachine
 
 stmRange :: [Int]
 stmRange = [0 .. 25]
@@ -44,8 +44,8 @@ nfa = process . char2STM
  where
   process :: Regex StateMachine -> StateMachine
   process (Value s) = s
-  process (Or s t) = disjointMap (process s) (process t) (++)
   process (And s t) = disjointMap (process s) (process t) juxtapose
+  process (Or s t) = disjointMap (process s) (process t) (++)
   process (Star s) = starify $ process s
   process Empty = undefined
 
@@ -56,32 +56,38 @@ nfa = process . char2STM
   char2STM (Value c) = Value $ singleton c
   char2STM Empty = Empty
 
-disjointMap :: StateMachine -> StateMachine -> SMOp -> StateMachine
+disjointMap :: StateMachine -> StateMachine -> STMOp -> StateMachine
 disjointMap s t f = f s (map replaceIndexes t)
  where
-  replaceIndexes :: State -> State
   replaceIndexes (State st v) = State st (map (mappingsForT Map.!) v)
-  replaceIndexes (E st v) = State st (map (mappingsForT Map.!) v)
+  replaceIndexes (E st v) = E st (map (mappingsForT Map.!) v)
   mappingsForT = Map.fromList $ (-1, -1) : zip [0 .. length t - 1] [length s ..]
 
-juxtapose :: SMOp
+juxtapose :: STMOp
 juxtapose s t = map (linkAcceptingToIdxs correctInitStates Normal) s ++ map removeInitial t
  where
   correctInitStates = map (+ length s) $ initialStates t
 
 starify :: StateMachine -> StateMachine
-starify s = moveInitial $ map (linkAcceptingToIdxs correctInitStates Accept) s
+starify s = moveInitial $ map (linkAcceptingToIdxs (initialStates s) Accept) s
  where
-  moveInitial t = E InitialAccepting correctInitStates : map removeInitial t
+  moveInitial t = E InitialAccepting correctInitStates : map (updateState . removeInitial) t
   correctInitStates = map (+ 1) $ initialStates s
+  updateState (State st vs) = State st $ map (\x -> if x == -1 then -1 else x + 1) vs
+  updateState (E st vs) = E st $ map (\x -> if x == -1 then -1 else x + 1) vs
 
 linkAcceptingToIdxs :: [Int] -> StateType -> State -> State
-linkAcceptingToIdxs xs st (State Accept _) = E st xs
+linkAcceptingToIdxs xs s (State Accept _) = E s xs
 linkAcceptingToIdxs _ _ s = s
 
 removeInitial :: State -> State
+removeInitial (State InitialAccepting v) = State Accept v
 removeInitial (State Initial v) = State Normal v
-removeInitial t = t
+removeInitial (E InitialAccepting v) = E Accept v
+removeInitial (E Initial v) = E Normal v
+removeInitial s = s
 
 initialStates :: StateMachine -> [Int]
-initialStates = findIndices ((== Initial) . stype)
+initialStates = findIndices (isInitialState . stype)
+ where
+  isInitialState s = s == Initial || s == InitialAccepting
