@@ -1,3 +1,5 @@
+{-# LANGUAGE ImportQualifiedPost #-}
+
 module Machines (
   StateType (..),
   Regex (..),
@@ -9,7 +11,7 @@ module Machines (
 
 import Data.Char (ord)
 import Data.List (findIndices)
-import qualified Data.Map as Map
+import Data.Map qualified as Map
 
 data StateType = Accept | Initial | InitialAccepting | Normal deriving (Eq, Show)
 data Regex c
@@ -20,11 +22,15 @@ data Regex c
   | Value c
   deriving (Show)
 data State
-  = State {stype :: StateType, values :: [Int]}
-  | E {stype :: StateType, targets :: [Int]}
+  = State StateType [Int]
+  | E StateType [Int]
   deriving (Eq, Show)
 type StateMachine = [State]
 type STMOp = StateMachine -> StateMachine -> StateMachine
+
+stype :: State -> StateType
+stype (State st _) = st
+stype (E st _) = st
 
 stmRange :: [Int]
 stmRange = [0 .. 25]
