@@ -1,5 +1,5 @@
 import Exercises.SLI (BinaryOperator (..), Expr (..), Statement (..), interp, maxArgs)
-import Machines (Regex (..), State (..), StateType (..), char2STM, nfa, singleton, stmRange)
+import Machines (Regex (..), State (..), StateType (..), nfa, singleton, stmRange)
 import Test.HUnit (Test (..), assertEqual, runTestTTAndExit)
 
 import Data.Char (ord)
@@ -31,11 +31,14 @@ exampleStarRegexC = Star $ Value 'C'
 exampleRegexB :: Regex Char
 exampleRegexB = Value 'B'
 
-exampleRegex1 :: Regex Char
-exampleRegex1 = And exampleRegexA exampleRegexB
+exampleRegexAOrB :: Regex Char
+exampleRegexAOrB = Or exampleRegexA exampleRegexB
 
-exampleRegex2 :: Regex Char
-exampleRegex2 = And (Or exampleRegexA exampleRegexB) exampleStarRegexC
+exampleRegexAAndB :: Regex Char
+exampleRegexAAndB = And exampleRegexA exampleRegexB
+
+exampleRegexComplete :: Regex Char
+exampleRegexComplete = And exampleRegexAOrB exampleStarRegexC
 
 generateState :: Char -> State
 generateState c = State Initial [if x == charCode then 1 else -1 | x <- stmRange]
@@ -44,6 +47,11 @@ generateState c = State Initial [if x == charCode then 1 else -1 | x <- stmRange
 
 generateStateWith :: Char -> StateType -> State
 generateStateWith c st = State st [if x == charCode then 1 else -1 | x <- stmRange]
+ where
+  charCode = ord c - 65
+
+generateStateWithNextState :: Char -> StateType -> Int -> State
+generateStateWithNextState c st idx = State st [if x == charCode then idx else -1 | x <- stmRange]
  where
   charCode = ord c - 65
 
@@ -83,23 +91,23 @@ tests =
           [ generateState 'A'
           , acceptingState
           ]
-          (nfa $ char2STM exampleRegexA)
+          (nfa exampleRegexA)
     , TestCase $
         assertEqual
           "nfa-basic-2"
           [ generateState 'B'
           , acceptingState
           ]
-          (nfa $ char2STM exampleRegexB)
+          (nfa exampleRegexB)
     , TestCase $
         assertEqual
           "nfa-1"
           [ generateState 'A'
           , E Normal [2]
-          , generateState 'B'
+          , generateStateWithNextState 'B' Normal 3
           , acceptingState
           ]
-          (nfa $ char2STM exampleRegex1)
+          (nfa exampleRegexAAndB)
     , TestCase $
         assertEqual
           "nfa-star-1"
@@ -107,5 +115,10 @@ tests =
           , generateStateWith 'C' Normal
           , E Accept [1]
           ]
-          (nfa $ char2STM exampleStarRegexC)
+          (nfa exampleStarRegexC)
+          -- , TestCase $
+          --     assertEqual
+          --       "nfa-or-1"
+          --       []
+          --       (nfa exampleRegexAOrB)
     ]
