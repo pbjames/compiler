@@ -26,7 +26,7 @@ exampleRegexA :: Regex Char
 exampleRegexA = Value 'A'
 
 exampleStarRegexC :: Regex Char
-exampleStarRegexC = Star $ Value 'c'
+exampleStarRegexC = Star $ Value 'C'
 
 exampleRegexB :: Regex Char
 exampleRegexB = Value 'B'
@@ -104,7 +104,7 @@ tests =
         assertEqual
           "nfa-star-1"
           [ E InitialAccepting [1]
-          , generateState 'C'
+          , generateStateWith 'C' Normal
           , E Accept [1]
           ]
           (nfa $ char2STM exampleStarRegexC)

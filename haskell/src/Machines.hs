@@ -18,6 +18,7 @@ data Regex c
   | And (Regex c) (Regex c)
   | Empty
   | Value c
+  deriving (Show)
 data State
   = State {stype :: StateType, values :: [Int]}
   | E {stype :: StateType, targets :: [Int]}
@@ -37,7 +38,7 @@ singleton c =
   endState = State Accept [-1 | _ <- stmRange]
 
 char2STM :: Regex Char -> Regex StateMachine
-char2STM (Star r) = char2STM r
+char2STM (Star r) = Star (char2STM r)
 char2STM (Or r s) = Or (char2STM r) (char2STM s)
 char2STM (And r s) = And (char2STM r) (char2STM s)
 char2STM (Value c) = Value $ singleton c
@@ -46,7 +47,7 @@ char2STM Empty = Empty
 -- We're collapsing all the 'singleton' machines into one recursively
 nfa :: Regex StateMachine -> StateMachine
 nfa (Value s) = s
-nfa (Or s t) = nfa s ++ nfa t
+nfa (Or s t) = nfa s ++ nfa t -- XXX: Need to be disjointed
 nfa (And s t) = nfa s `juxtapose` nfa t
 nfa (Star s) = starify $ nfa s
 nfa Empty = undefined
@@ -59,11 +60,12 @@ initialStates :: StateMachine -> [Int]
 initialStates = findIndices ((== Initial) . stype)
 
 starify :: StateMachine -> StateMachine
-starify s = newInitial $ map (linkAcceptingToIdxs (initialStates s) Accept) s
+starify s = moveInitial $ map (linkAcceptingToIdxs correctInitStates Accept) s
  where
-  newInitial t = E InitialAccepting (initialStates t) : map removeInitial t
+  moveInitial t = E InitialAccepting correctInitStates : map removeInitial t
   removeInitial (State Initial v) = State Normal v
   removeInitial t = t
+  correctInitStates = map (+ 1) $ initialStates s
 
 juxtapose :: StateMachine -> StateMachine -> StateMachine
 juxtapose s t = map (linkAcceptingToIdxs correctInitStates Normal) s ++ t
