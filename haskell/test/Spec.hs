@@ -40,23 +40,13 @@ exampleRegexAAndB = And exampleRegexA exampleRegexB
 exampleRegexComplete :: Regex Char
 exampleRegexComplete = And exampleRegexAOrB exampleStarRegexC
 
-generateState :: Char -> State
-generateState c = State Initial [if x == charCode then 1 else -1 | x <- stmRange]
- where
-  charCode = ord c - 65
-
-generateStateWith :: Char -> StateType -> State
-generateStateWith c st = State st [if x == charCode then 1 else -1 | x <- stmRange]
- where
-  charCode = ord c - 65
-
-generateStateWithNextState :: Char -> StateType -> Int -> State
-generateStateWithNextState c st idx = State st [if x == charCode then idx else -1 | x <- stmRange]
+computeState :: Char -> StateType -> Int -> State
+computeState c st idx = State st [if x == charCode then idx else -1 | x <- stmRange]
  where
   charCode = ord c - 65
 
 acceptingState :: State
-acceptingState = State Accept [-1 | x <- stmRange]
+acceptingState = State Accept [-1 | _ <- stmRange]
 
 tests :: Test
 tests =
@@ -74,51 +64,67 @@ tests =
     , TestCase $
         assertEqual
           "singleton-statemachine-1"
-          [ generateState 'A'
+          [ computeState 'A' Initial 1
           , acceptingState
           ]
           (singleton 'A')
     , TestCase $
         assertEqual
           "singleton-statemachine-2"
-          [ generateState 'Z'
+          [ computeState 'Z' Initial 1
           , acceptingState
           ]
           (singleton 'Z')
     , TestCase $
         assertEqual
           "nfa-basic-1"
-          [ generateState 'A'
+          [ computeState 'A' Initial 1
           , acceptingState
           ]
           (nfa exampleRegexA)
     , TestCase $
         assertEqual
           "nfa-basic-2"
-          [ generateState 'B'
+          [ computeState 'B' Initial 1
           , acceptingState
           ]
           (nfa exampleRegexB)
     , TestCase $
         assertEqual
-          "nfa-1"
-          [ generateState 'A'
+          "nfa-and-1"
+          [ computeState 'A' Initial 1
           , E Normal [2]
-          , generateStateWithNextState 'B' Normal 3
+          , computeState 'B' Normal 3
           , acceptingState
           ]
           (nfa exampleRegexAAndB)
     , TestCase $
         assertEqual
+          "nfa-or-1"
+          [ computeState 'A' Initial 1
+          , acceptingState
+          , computeState 'B' Initial 3
+          , acceptingState
+          ]
+          (nfa exampleRegexAOrB)
+    , TestCase $
+        assertEqual
           "nfa-star-1"
           [ E InitialAccepting [1]
-          , generateStateWith 'C' Normal
+          , computeState 'C' Normal 2
           , E Accept [1]
           ]
           (nfa exampleStarRegexC)
-          -- , TestCase $
-          --     assertEqual
-          --       "nfa-or-1"
-          --       []
-          --       (nfa exampleRegexAOrB)
+    , TestCase $
+        assertEqual
+          "nfa-1"
+          [ computeState 'A' Initial 1
+          , E Normal [4]
+          , computeState 'B' Initial 3
+          , E Normal [4]
+          , E Accept [5]
+          , computeState 'C' Normal 6
+          , E Accept [5]
+          ]
+          (nfa exampleRegexComplete)
     ]
