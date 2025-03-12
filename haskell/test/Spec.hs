@@ -25,6 +25,9 @@ exampleSingleLine =
 exampleRegexA :: Regex Char
 exampleRegexA = Value 'A'
 
+exampleRegexC :: Regex Char
+exampleRegexC = Value 'C'
+
 exampleStarRegexC :: Regex Char
 exampleStarRegexC = Star $ Value 'C'
 
@@ -45,6 +48,14 @@ exampleRegexDStarStar = Star . Star $ Value 'D'
 
 exampleRegexComplete :: Regex Char
 exampleRegexComplete = And exampleRegexAOrB exampleStarRegexC
+
+-- ((ab|ac)*(abb)*)*
+exampleRegexNightmarish :: Regex Char
+exampleRegexNightmarish =
+  Star $
+    And
+      (Star $ Or (And exampleRegexA exampleRegexB) (And exampleRegexA exampleRegexC))
+      exampleRegexAABStar
 
 computeState :: Char -> StateType -> Int -> State
 computeState c st idx = State st [if x == charCode then idx else -1 | x <- stmRange] []
@@ -157,4 +168,27 @@ tests =
           , computeEState Accept [2, 1]
           ]
           (nfa exampleRegexDStarStar)
+    , TestCase $
+        -- INFO: I checked this out manually and it appears to actually be correct
+        assertEqual
+          "nfa-4"
+          [ State InitAC [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [1]
+          , State Accept [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [2, 6]
+          , State Normal [03, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] []
+          , State Normal [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [4]
+          , State Normal [-1, 05, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] []
+          , State Normal [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [2, 6, 10]
+          , State Normal [07, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] []
+          , State Normal [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [8]
+          , State Normal [-1, -1, 09, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] []
+          , State Normal [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [2, 6, 10]
+          , State Accept [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [11, 1]
+          , State Normal [12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] []
+          , State Normal [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [13]
+          , State Normal [14, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] []
+          , State Normal [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [15]
+          , State Normal [-1, 16, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] []
+          , State Accept [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [11, 1]
+          ]
+          (nfa exampleRegexNightmarish)
     ]
