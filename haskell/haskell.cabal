@@ -61,7 +61,9 @@ test-suite haskell-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Unit.DFA
       Unit.NFA
+      Unit.SLI
       Paths_haskell
   autogen-modules:
       Paths_haskell
