@@ -19,7 +19,8 @@ import Machines.State (
   stype,
  )
 
--- We're collapsing all the 'singleton' machines into one recursively
+-- WARN: I'm not sure if we handle the change from [Int] to [[Int]] properly but I'm
+-- sure it doesn't matter for NFAs
 nfa :: Regex Char -> StateMachine
 nfa = process . char2STM
  where
