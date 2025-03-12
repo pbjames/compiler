@@ -37,6 +37,12 @@ exampleRegexAOrB = Or exampleRegexA exampleRegexB
 exampleRegexAAndB :: Regex Char
 exampleRegexAAndB = And exampleRegexA exampleRegexB
 
+exampleRegexAABStar :: Regex Char
+exampleRegexAABStar = Star $ And (And exampleRegexA exampleRegexA) exampleRegexB
+
+exampleRegexDStarStar :: Regex Char
+exampleRegexDStarStar = Star . Star $ Value 'D'
+
 exampleRegexComplete :: Regex Char
 exampleRegexComplete = And exampleRegexAOrB exampleStarRegexC
 
@@ -45,8 +51,8 @@ computeState c st idx = State st [if x == charCode then idx else -1 | x <- stmRa
  where
   charCode = ord c - 65
 
-computeEState :: StateType -> Int -> State
-computeEState st idx = State st noEdges [idx]
+computeEState :: StateType -> [Int] -> State
+computeEState st = State st noEdges
 
 acceptingState :: State
 acceptingState = State Accept noEdges []
@@ -96,7 +102,7 @@ tests =
         assertEqual
           "nfa-and-1"
           [ computeState 'A' Initial 1
-          , computeEState Normal 2
+          , computeEState Normal [2]
           , computeState 'B' Normal 3
           , acceptingState
           ]
@@ -113,21 +119,42 @@ tests =
     , TestCase $
         assertEqual
           "nfa-star-1"
-          [ computeEState InitialAccepting 1
+          [ computeEState InitialAccepting [1]
           , computeState 'C' Normal 2
-          , computeEState Accept 1
+          , computeEState Accept [1]
           ]
           (nfa exampleStarRegexC)
     , TestCase $
         assertEqual
           "nfa-1"
           [ computeState 'A' Initial 1
-          , computeEState Normal 4
+          , computeEState Normal [4]
           , computeState 'B' Initial 3
-          , computeEState Normal 4
-          , computeEState Accept 5
+          , computeEState Normal [4]
+          , computeEState Accept [5]
           , computeState 'C' Normal 6
-          , computeEState Accept 5
+          , computeEState Accept [5]
           ]
           (nfa exampleRegexComplete)
+    , TestCase $
+        assertEqual
+          "nfa-2"
+          [ computeEState InitialAccepting [1]
+          , computeState 'A' Normal 2
+          , computeEState Normal [3]
+          , computeState 'A' Normal 4
+          , computeEState Normal [5]
+          , computeState 'B' Normal 6
+          , computeEState Accept [1]
+          ]
+          (nfa exampleRegexAABStar)
+    , TestCase $
+        assertEqual
+          "nfa-3"
+          [ computeEState InitialAccepting [1]
+          , computeEState Accept [2]
+          , computeState 'D' Normal 3
+          , computeEState Accept [2, 1]
+          ]
+          (nfa exampleRegexDStarStar)
     ]

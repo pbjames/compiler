@@ -86,7 +86,8 @@ starify s = moveInitial $ map (linkAcceptingToIdxs (initialStates s) Accept) s
   updateState = mapOverValues (\x -> if x == -1 then -1 else x + 1)
 
 linkAcceptingToIdxs :: [Int] -> StateType -> State -> State
-linkAcceptingToIdxs ys s (State Accept xs _) = State s xs ys
+-- WARN: Should we link initial accepting states?
+linkAcceptingToIdxs ys s (State Accept xs zs) = State s xs $ zs ++ ys
 linkAcceptingToIdxs _ _ s = s
 
 removeInitial :: State -> State
