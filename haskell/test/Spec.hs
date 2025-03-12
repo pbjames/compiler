@@ -1,5 +1,5 @@
 import Exercises.SLI (BinaryOperator (..), Expr (..), Statement (..), interp, maxArgs)
-import Machines (Regex (..), State (..), StateType (..), nfa, singleton, stmRange)
+import Machines (Regex (..), State (..), StateType (..), nfa, noEdges, singleton, stmRange)
 import Test.HUnit (Test (..), assertEqual, runTestTTAndExit)
 
 import Data.Char (ord)
@@ -41,12 +41,15 @@ exampleRegexComplete :: Regex Char
 exampleRegexComplete = And exampleRegexAOrB exampleStarRegexC
 
 computeState :: Char -> StateType -> Int -> State
-computeState c st idx = State st [if x == charCode then idx else -1 | x <- stmRange]
+computeState c st idx = State st [if x == charCode then idx else -1 | x <- stmRange] []
  where
   charCode = ord c - 65
 
+computeEState :: StateType -> Int -> State
+computeEState st idx = State st noEdges [idx]
+
 acceptingState :: State
-acceptingState = State Accept [-1 | _ <- stmRange]
+acceptingState = State Accept noEdges []
 
 tests :: Test
 tests =
@@ -93,7 +96,7 @@ tests =
         assertEqual
           "nfa-and-1"
           [ computeState 'A' Initial 1
-          , E Normal [2]
+          , computeEState Normal 2
           , computeState 'B' Normal 3
           , acceptingState
           ]
@@ -110,21 +113,21 @@ tests =
     , TestCase $
         assertEqual
           "nfa-star-1"
-          [ E InitialAccepting [1]
+          [ computeEState InitialAccepting 1
           , computeState 'C' Normal 2
-          , E Accept [1]
+          , computeEState Accept 1
           ]
           (nfa exampleStarRegexC)
     , TestCase $
         assertEqual
           "nfa-1"
           [ computeState 'A' Initial 1
-          , E Normal [4]
+          , computeEState Normal 4
           , computeState 'B' Initial 3
-          , E Normal [4]
-          , E Accept [5]
+          , computeEState Normal 4
+          , computeEState Accept 5
           , computeState 'C' Normal 6
-          , E Accept [5]
+          , computeEState Accept 5
           ]
           (nfa exampleRegexComplete)
     ]

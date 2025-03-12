@@ -7,6 +7,7 @@ module Machines (
   singleton,
   stmRange,
   nfa,
+  noEdges,
 ) where
 
 import Data.Char (ord)
@@ -22,18 +23,22 @@ data Regex c
   | Value c
   deriving (Show)
 data State
-  = State StateType [Int]
-  | E StateType [Int]
+  = State StateType [Int] [Int]
   deriving (Eq, Show)
 type StateMachine = [State]
 type STMOp = StateMachine -> StateMachine -> StateMachine
 
 stype :: State -> StateType
-stype (State st _) = st
-stype (E st _) = st
+stype (State st _ _) = st
+
+mapOverValues :: (Int -> Int) -> State -> State
+mapOverValues f (State st xs ys) = State st (map f xs) (map f ys)
 
 stmRange :: [Int]
 stmRange = [0 .. 25]
+
+noEdges :: [Int]
+noEdges = [-1 | _ <- stmRange]
 
 singleton :: Char -> StateMachine
 singleton c =
@@ -41,8 +46,8 @@ singleton c =
   , endState
   ]
  where
-  startState = State Initial [if x == (ord c - 65) then 1 else -1 | x <- [0 .. 25]]
-  endState = State Accept [-1 | _ <- stmRange]
+  startState = State Initial [if x == (ord c - 65) then 1 else -1 | x <- [0 .. 25]] []
+  endState = State Accept noEdges []
 
 -- We're collapsing all the 'singleton' machines into one recursively
 nfa :: Regex Char -> StateMachine
@@ -65,8 +70,7 @@ nfa = process . char2STM
 disjointMap :: StateMachine -> StateMachine -> STMOp -> StateMachine
 disjointMap s t f = f s (map replaceIndexes t)
  where
-  replaceIndexes (State st v) = State st (map (mappingsForT Map.!) v)
-  replaceIndexes (E st v) = E st (map (mappingsForT Map.!) v)
+  replaceIndexes = mapOverValues (mappingsForT Map.!)
   mappingsForT = Map.fromList $ (-1, -1) : zip [0 .. length t - 1] [length s ..]
 
 juxtapose :: STMOp
@@ -77,20 +81,17 @@ juxtapose s t = map (linkAcceptingToIdxs correctInitStates Normal) s ++ map remo
 starify :: StateMachine -> StateMachine
 starify s = moveInitial $ map (linkAcceptingToIdxs (initialStates s) Accept) s
  where
-  moveInitial t = E InitialAccepting correctInitStates : map (updateState . removeInitial) t
+  moveInitial t = State InitialAccepting noEdges correctInitStates : map (updateState . removeInitial) t
   correctInitStates = map (+ 1) $ initialStates s
-  updateState (State st vs) = State st $ map (\x -> if x == -1 then -1 else x + 1) vs
-  updateState (E st vs) = E st $ map (\x -> if x == -1 then -1 else x + 1) vs
+  updateState = mapOverValues (\x -> if x == -1 then -1 else x + 1)
 
 linkAcceptingToIdxs :: [Int] -> StateType -> State -> State
-linkAcceptingToIdxs xs s (State Accept _) = E s xs
+linkAcceptingToIdxs ys s (State Accept xs _) = State s xs ys
 linkAcceptingToIdxs _ _ s = s
 
 removeInitial :: State -> State
-removeInitial (State InitialAccepting v) = State Accept v
-removeInitial (State Initial v) = State Normal v
-removeInitial (E InitialAccepting v) = E Accept v
-removeInitial (E Initial v) = E Normal v
+removeInitial (State InitialAccepting xs vs) = State Accept xs vs
+removeInitial (State Initial xs vs) = State Normal xs vs
 removeInitial s = s
 
 initialStates :: StateMachine -> [Int]
