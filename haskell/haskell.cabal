@@ -27,9 +27,8 @@ library
   exposed-modules:
       Exercises.SLI
       Exercises.Tree
-      Lexer
-      Lib
-      Machines
+      Machines.NFA
+      Machines.State
   other-modules:
       Paths_haskell
   autogen-modules:

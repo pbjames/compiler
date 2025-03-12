@@ -1,5 +1,6 @@
 import Exercises.SLI (BinaryOperator (..), Expr (..), Statement (..), interp, maxArgs)
-import Machines (Regex (..), State (..), StateType (..), nfa, noEdges, singleton, stmRange)
+import Machines.NFA (nfa)
+import Machines.State (Regex (..), State (..), StateType (..), noEdges, singleton, stmRange)
 import Test.HUnit (Test (..), assertEqual, runTestTTAndExit)
 
 import Data.Char (ord)
@@ -172,7 +173,7 @@ tests =
         -- INFO: I checked this out manually and it appears to actually be correct
         assertEqual
           "nfa-4"
-          [ State InitAC [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [1]
+          [ State InitialAccepting [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [1]
           , State Accept [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [2, 6]
           , State Normal [03, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] []
           , State Normal [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1] [4]
