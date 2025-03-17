@@ -41,8 +41,8 @@ exampleRegexNightmarish =
       (Star $ Or (And exampleRegexA exampleRegexB) (And exampleRegexA exampleRegexC))
       exampleRegexAABStar
 
-computeState :: Char -> StateType -> Int -> State
-computeState c st idx = State st [if x == charCode then [idx] else [-1] | x <- stmRange] []
+computeState :: Char -> StateType -> Int -> ([Int] -> State)
+computeState c st idx = State st [if x == charCode then [idx] else [-1] | x <- stmRange]
  where
   charCode = ord c - 65
 
@@ -54,21 +54,54 @@ acceptingState = State Accept noEdges []
 
 dfaTests :: [Test]
 dfaTests =
-  [ TestCase $
+  [ -- TestCase $
+    --   assertEqual
+    --     "dfa-ereducer-1"
+    --     [ State InitialAccepting ([[4], [4], [4]] ++ [[-1] | _ <- [1 .. 23]]) []
+    --     , computeState 'A' Normal 4 []
+    --     , computeState 'B' Normal 4 []
+    --     , computeState 'C' Normal 4 []
+    --     , acceptingState
+    --     ]
+    --     ( removeEPaths
+    --         [ computeEState InitialAccepting [1, 2, 3]
+    --         , computeState 'A' Normal 4 []
+    --         , computeState 'B' Normal 4 []
+    --         , computeState 'C' Normal 4 []
+    --         , acceptingState
+    --         ]
+    --     )
+    TestCase $
       assertEqual
-        "dfa-reducer-1"
-        [ State InitialAccepting ([[4], [4], [4]] ++ [[-1] | _ <- [1 .. 23]]) []
-        , computeState 'A' Normal 4
-        , computeState 'B' Normal 4
-        , computeState 'C' Normal 4
+        "dfa-ereducer-2"
+        [ State InitialAccepting ([[4], [4], [4], [4]] ++ [[-1] | _ <- [1 .. 22]]) []
+        , computeState 'A' Normal 4 []
+        , computeState 'B' Normal 4 []
+        , computeState 'C' Normal 4 [5]
         , acceptingState
+        , computeState 'D' Normal 4 []
         ]
         ( removeEPaths
             [ computeEState InitialAccepting [1, 2, 3]
-            , computeState 'A' Normal 4
-            , computeState 'B' Normal 4
-            , computeState 'C' Normal 4
+            , computeState 'A' Normal 4 []
+            , computeState 'B' Normal 4 []
+            , computeState 'C' Normal 4 [5]
             , acceptingState
+            , computeState 'D' Normal 4 []
             ]
         )
   ]
+
+-- [State InitAC [[04],[04],[04],[04],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1]] []
+-- ,State Normal [[04],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1]] []
+-- ,State Normal [[-1],[04],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1]] []
+-- ,State Normal [[-1],[-1],[04],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1]] [5]
+-- ,State Accept [[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1]] []
+-- ,State Normal [[-1],[-1],[-1],[04],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1]] []]
+
+-- [State InitAC [[04],[04],[04],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1]] []
+-- ,State Normal [[04],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1]] []
+-- ,State Normal [[-1],[04],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1]] []
+-- ,State Normal [[-1],[-1],[04],[04],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1]] []
+-- ,State Accept [[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1]] []
+-- ,State Normal [[-1],[-1],[-1],[04],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1]] []]

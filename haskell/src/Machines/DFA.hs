@@ -4,6 +4,7 @@ module Machines.DFA (
 ) where
 
 import Data.List (findIndex, nub, transpose)
+import Debug.Trace (trace)
 import Machines.NFA (nfa)
 import Machines.State (Regex, State (..), StateMachine)
 
@@ -15,9 +16,10 @@ dfa = processDfa . removeEPaths . nfa
 removeEPaths :: StateMachine -> StateMachine
 removeEPaths stm = targetEPath stm targetIdx
  where
-  targetIdx = findIndex (\(State _ _ ys) -> not $ null ys) stm
+  targetIdx = findIndex (\(State _ _ ys) -> not $ null $ reverse ys) stm
 
 targetEPath :: StateMachine -> Maybe Int -> StateMachine
+targetEPath _ (Just i) | trace ("Got index: " ++ show i) False = undefined
 targetEPath stm (Just i) = removeEPaths processStm
  where
   filterCyclicEState :: Int -> State -> State
@@ -28,13 +30,13 @@ targetEPath stm (Just i) = removeEPaths processStm
   collapseEdges = map (foldr1 (++)) . transpose
   linkIndexesToState :: State -> [[Int]] -> State
   linkIndexesToState (State st xs _) zs = State st (filterNonEmptyEdges . nub <$> zipWith (++) xs zs) []
-  linkedHeadState = linkIndexesToState selectedState $ collapseEdges $ reduceEEdges stm selectedState []
+  linkedHeadState = linkIndexesToState selectedState $ collapseEdges $ reduceEEdges stm selectedState
   selectedState = filterCyclicEState i $ stm !! i
   processStm = [if pred x == i then linkedHeadState else stm !! pred x | x <- [1 .. length stm]]
 targetEPath stm Nothing = stm
 
-reduceEEdges :: StateMachine -> State -> [Int] -> [[[Int]]]
-reduceEEdges stm (State _ xs ys) vs = xs : map newCall newYs
+reduceEEdges :: StateMachine -> State -> [[[Int]]]
+reduceEEdges ___ s | trace ("reduceEdge state : " ++ show s) False = undefined
+reduceEEdges stm (State _ xs ys) = xs : map newCall ys
  where
-  newCall i = concat $ reduceEEdges stm (stm !! i) (i : vs)
-  newYs = filter (`notElem` vs) ys
+  newCall i = concat $ reduceEEdges stm (stm !! i)
